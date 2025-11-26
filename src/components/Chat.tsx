@@ -1,7 +1,11 @@
 'use client'
 
 import { useChat } from '@ai-sdk/react'
-import { useState, useEffect } from 'react'
+import { DefaultChatTransport } from 'ai'
+import { useState, useEffect, useMemo } from 'react'
+import remarkMath from 'remark-math'
+import remarkGfm from 'remark-gfm'
+import rehypeKatex from 'rehype-katex'
 import {
   Conversation,
   ConversationContent,
@@ -23,15 +27,38 @@ import {
 import { Loader } from '@/components/ai-elements/loader'
 import { MessageSquare } from 'lucide-react'
 
+function getTextContent(message: { parts: Array<{ type: string; text?: string }> }) {
+  return message.parts
+    .filter((part) => part.type === 'text')
+    .map((part) => part.text)
+    .join('')
+}
+
+function convertLatexDelimiters(text: string) {
+  return text
+    .replace(/\\\[/g, '$$')
+    .replace(/\\\]/g, '$$')
+    .replace(/\\\(/g, '$')
+    .replace(/\\\)/g, '$')
+    .replace(/^\[\s*/gm, '$$')
+    .replace(/\s*\]$/gm, '$$')
+}
+
 function ChatInner() {
-  const { messages, append, status } = useChat({
-    api: '/api/chat',
-  })
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: '/api/chat' }),
+    []
+  )
+
+  const { messages, sendMessage, status } = useChat({ transport })
 
   return (
-    <div className="flex h-screen flex-col">
-      <Conversation>
-        <ConversationContent>
+    <div className="flex flex-1 flex-col h-full">
+      <header className="border-b p-4 shrink-0">
+        <h1 className="text-xl font-semibold text-center">AI Chat</h1>
+      </header>
+      <Conversation className="flex-1 min-h-0">
+        <ConversationContent className="max-w-3xl mx-auto w-full">
           {messages.length === 0 ? (
             <ConversationEmptyState
               title="Start a conversation"
@@ -43,9 +70,14 @@ function ChatInner() {
               <Message key={message.id} from={message.role}>
                 <MessageContent>
                   {message.role === 'assistant' ? (
-                    <MessageResponse>{message.content}</MessageResponse>
+                    <MessageResponse
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {convertLatexDelimiters(getTextContent(message))}
+                    </MessageResponse>
                   ) : (
-                    message.content
+                    getTextContent(message)
                   )}
                 </MessageContent>
               </Message>
@@ -66,7 +98,7 @@ function ChatInner() {
         <PromptInput
           onSubmit={async ({ text }) => {
             if (text.trim()) {
-              await append({ role: 'user', content: text })
+              await sendMessage({ text })
             }
           }}
           className="mx-auto max-w-3xl"
@@ -91,7 +123,7 @@ export function Chat() {
 
   if (!mounted) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <Loader />
       </div>
     )
