@@ -1,6 +1,7 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import Footer from '../components/Footer'
 
 import appCss from '../styles.css?url'
 
@@ -31,12 +32,15 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
-      <body className="bg-background text-foreground">
-        {children}
+      <body className="bg-background text-foreground min-h-screen flex flex-col">
+        <main className="flex-1 flex flex-col pb-14">
+          {children}
+        </main>
+        <Footer />
         <TanStackDevtools
           config={{
             position: 'bottom-right',
