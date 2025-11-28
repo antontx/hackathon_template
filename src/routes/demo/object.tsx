@@ -15,7 +15,7 @@ import * as Timeline from '@/components/ui/timeline'
 import { timelineSchema } from '@/lib/schemas/timeline'
 import { CalendarIcon } from 'lucide-react'
 
-export const Route = createFileRoute('/objectDemo')({
+export const Route = createFileRoute('/demo/object')({
   component: ObjectDemoPage,
 })
 
